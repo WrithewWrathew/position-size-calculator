@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -107,16 +108,14 @@
       accent-color: var(--accent);
     }
     select option{
-      background: #000;      /* requested: black dropdown background */
-      color: #fff;           /* requested: white numbers */
+      background: #000;      /* black dropdown background */
+      color: #fff;           /* white numbers */
     }
     select option:checked,
     select option:hover{
-      /* highlight with contrast */
-      background: #1a1a1a;
+      background: #1a1a1a;   /* highlight with contrast */
       color: #fff;
     }
-    /* Windows high-contrast/forced-colors support */
     @media (forced-colors: active) {
       select, option { forced-color-adjust: auto; }
     }
@@ -315,7 +314,6 @@
       </div>
 
       <div class="row">
-        <button id="calcBtn" type="button">Calculate</button>
         <button id="copyBtn" type="button" class="copy">Copy Result</button>
         <button id="resetBtn" type="button" class="ghost">Reset</button>
       </div>
@@ -328,7 +326,7 @@
       </div>
 
       <div id="status" class="status" aria-live="polite">
-        Enter values above and press Calculate.
+        Enter values above to see your result.
       </div>
 
       <div class="mini">
@@ -339,7 +337,7 @@
         <div class="title">Manual steps (based on your current inputs)</div>
         <ol id="howtoSteps">
           <li>Enter an <code>Account USD</code> amount, choose <code>H</code> or <code>L</code>, and select a <code>Zone</code>.</li>
-          <li>Press <code>Calculate</code> to see steps for that exact selection.</li>
+          <li>When all fields are valid, the result will appear automatically.</li>
         </ol>
       </div>
     </div>
@@ -502,9 +500,54 @@
     const zoneEl = document.getElementById("zone");
     const resultEl = document.getElementById("resultValue");
 
-    // Store last calculated values so "Copy Result" copies the real answer
+    // Store last computed values so "Copy Result" copies the real answer
     let lastResultText = "";
     let lastResultNumber = null;
+
+    function clearResultToBlankState() {
+      resultEl.textContent = "Your Position Size = —";
+      lastResultText = "";
+      lastResultNumber = null;
+      renderManualSteps([
+        "Enter an Account USD amount, choose H or L, and select a Zone.",
+        "When all fields are valid, the result will appear automatically."
+      ]);
+    }
+
+    function recomputeIfReady() {
+      const acc = sanitizeAccount(accountEl.value);
+      const hb = sanitizeHB(hbEl.value);
+      const zone = sanitizeZone(zoneEl.value);
+
+      // If any field is invalid/missing, blank out the result (as requested)
+      if (!acc.ok || !hb.ok || !zone.ok) {
+        clearResultToBlankState();
+
+        // Status message: show the first relevant error, otherwise neutral prompt
+        if (accountEl.value.trim().length === 0 && hbEl.value.trim().length === 0 && (zoneEl.value === "")) {
+          setStatus("Enter values above to see your result.", "");
+          return;
+        }
+
+        const firstError = (!acc.ok ? acc.error : (!hb.ok ? hb.error : zone.error));
+        setStatus(firstError, "bad");
+        return;
+      }
+
+      // All valid -> compute and display
+      const pos = computePositionSize(acc.valueInt, hb.value, zone.value);
+      const outText = "Your Position Size = " + formatUSDInt(pos);
+
+      resultEl.textContent = outText;
+      lastResultText = outText;
+      lastResultNumber = pos;
+
+      const accFmt = formatUSDInt(acc.valueInt);
+      setStatus(`OK — Account: ${accFmt}, Mode: ${hb.value}, Zone: ${zone.value} → Position Size: ${formatUSDInt(pos)}`, "ok");
+
+      const steps = buildManualSteps(acc.valueInt, hb.value, zone.value, pos);
+      renderManualSteps(steps);
+    }
 
     // Account: allow digits, optional leading $, and allow user to paste $ or commas/spaces (we'll strip)
     accountEl.addEventListener("input", () => {
@@ -515,10 +558,12 @@
 
       // If there are multiple $ signs, keep only the first (and force it to the front if present)
       const hasDollar = v.includes("$");
-      v = v.replace(/\$/g, ""); // remove all dollars
+      v = v.replace(/\$/g, "");
       if (hasDollar) v = "$" + v;
 
       accountEl.value = v;
+
+      recomputeIfReady();
     });
 
     // H/L field: force single character and letters only
@@ -526,78 +571,18 @@
       let v = hbEl.value.replace(/[^a-zA-Z]/g, "");
       v = v.slice(0, 1).toUpperCase();
       hbEl.value = v;
+
+      recomputeIfReady();
     });
 
-    // Optional: calculate on Enter
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        document.getElementById("calcBtn").click();
-      }
-    });
-
-    // --- Actions ---
-    document.getElementById("calcBtn").addEventListener("click", () => {
-      const acc = sanitizeAccount(accountEl.value);
-      if (!acc.ok) {
-        setStatus(acc.error, "bad");
-        resultEl.textContent = "Your Position Size = —";
-        lastResultText = "";
-        lastResultNumber = null;
-        renderManualSteps([
-          "Enter an Account USD amount, choose H or L, and select a Zone.",
-          "Press Calculate to see the step-by-step manual method for your exact selection."
-        ]);
-        return;
-      }
-
-      const hb = sanitizeHB(hbEl.value);
-      if (!hb.ok) {
-        setStatus(hb.error, "bad");
-        resultEl.textContent = "Your Position Size = —";
-        lastResultText = "";
-        lastResultNumber = null;
-        renderManualSteps([
-          "Enter an Account USD amount, choose H or L, and select a Zone.",
-          "Press Calculate to see the step-by-step manual method for your exact selection."
-        ]);
-        return;
-      }
-
-      const zone = sanitizeZone(zoneEl.value);
-      if (!zone.ok) {
-        setStatus(zone.error, "bad");
-        resultEl.textContent = "Your Position Size = —";
-        lastResultText = "";
-        lastResultNumber = null;
-        renderManualSteps([
-          "Enter an Account USD amount, choose H or L, and select a Zone.",
-          "Press Calculate to see the step-by-step manual method for your exact selection."
-        ]);
-        return;
-      }
-
-      const pos = computePositionSize(acc.valueInt, hb.value, zone.value);
-      const outText = "Your Position Size = " + formatUSDInt(pos);
-
-      resultEl.textContent = outText;
-
-      // Save for copy button
-      lastResultText = outText;
-      lastResultNumber = pos;
-
-      // Friendly status summary
-      const accFmt = formatUSDInt(acc.valueInt);
-      setStatus(`OK — Account: ${accFmt}, Mode: ${hb.value}, Zone: ${zone.value} → Position Size: ${formatUSDInt(pos)}`, "ok");
-
-      // Manual steps for their exact inputs
-      const steps = buildManualSteps(acc.valueInt, hb.value, zone.value, pos);
-      renderManualSteps(steps);
+    // Zone selection changes
+    zoneEl.addEventListener("change", () => {
+      recomputeIfReady();
     });
 
     document.getElementById("copyBtn").addEventListener("click", async () => {
       if (!lastResultText) {
-        setStatus("Nothing to copy yet — press Calculate first.", "bad");
+        setStatus("Nothing to copy yet — fill in all fields first.", "bad");
         return;
       }
       const ok = await copyToClipboard(lastResultText);
@@ -612,22 +597,14 @@
       accountEl.value = "";
       hbEl.value = "";
       zoneEl.value = "";
-      resultEl.textContent = "Your Position Size = —";
-      lastResultText = "";
-      lastResultNumber = null;
-      setStatus("Enter values above and press Calculate.", "");
-      renderManualSteps([
-        "Enter an Account USD amount, choose H or L, and select a Zone.",
-        "Press Calculate to see the step-by-step manual method for your exact selection."
-      ]);
+      setStatus("Enter values above to see your result.", "");
+      clearResultToBlankState();
       accountEl.focus();
     });
 
-    // Initial manual steps message
-    renderManualSteps([
-      "Enter an Account USD amount, choose H or L, and select a Zone.",
-      "Press Calculate to see the step-by-step manual method for your exact selection."
-    ]);
+    // Initial state
+    clearResultToBlankState();
   </script>
 </body>
 </html>
+```
