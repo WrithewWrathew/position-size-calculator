@@ -48,11 +48,11 @@
       letter-spacing: .2px;
     }
 
-    /* +2pt (was 14px) */
+    /* +2pt again (was 16px) */
     .sub{
       margin: 0;
       color: var(--muted);
-      font-size: 16px;
+      font-size: 18px;
       line-height: 1.4;
     }
 
@@ -76,10 +76,10 @@
       .grid .full{ grid-column: 1 / -1; }
     }
 
-    /* +2pt (was 13px) */
+    /* +2pt again (was 15px) */
     label{
       display:block;
-      font-size: 15px;
+      font-size: 17px;
       color: var(--muted);
       margin-bottom: 8px;
     }
@@ -124,11 +124,11 @@
       select, option { forced-color-adjust: auto; }
     }
 
-    /* +2pt (was 12px) */
+    /* +2pt again (was 14px) */
     .hint{
       margin-top: 7px;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 16px;
       line-height: 1.35;
     }
 
@@ -140,14 +140,14 @@
       margin-top: 14px;
     }
 
-    /* +2pt (was 15px) */
+    /* +2pt again (was 17px) */
     button{
       appearance:none;
       border: 1px solid rgba(125,211,252,.35);
       background: rgba(125,211,252,.12);
       color: var(--text);
       padding: 12px 14px;
-      font-size: 17px;
+      font-size: 19px;
       border-radius: 14px;
       cursor:pointer;
       transition: transform .06s ease, background .15s ease, border-color .15s ease;
@@ -188,10 +188,10 @@
       flex-wrap: wrap;
     }
 
-    /* +2pt (was 13px) */
+    /* +2pt again (was 15px) */
     .output .title{
       color: var(--muted);
-      font-size: 15px;
+      font-size: 17px;
       margin-bottom: 4px;
     }
 
@@ -202,10 +202,10 @@
       letter-spacing: .2px;
     }
 
-    /* +2pt (was 13px) */
+    /* +2pt again (was 15px) */
     .status{
       margin-top: 10px;
-      font-size: 15px;
+      font-size: 17px;
       line-height: 1.35;
       padding: 10px 12px;
       border-radius: 12px;
@@ -224,9 +224,9 @@
       color: var(--danger);
     }
 
-    /* +2pt (was 12px) */
+    /* +2pt again (was 14px) */
     .mini{
-      font-size: 14px;
+      font-size: 16px;
       color: var(--muted);
       margin-top: 12px;
       line-height: 1.4;
@@ -239,24 +239,24 @@
       border: 1px solid var(--border);
       background: rgba(255,255,255,.02);
     }
-    /* +2pt (was 13px) */
+    /* +2pt again (was 15px) */
     .howto .title{
-      font-size: 15px;
+      font-size: 17px;
       color: var(--muted);
       margin-bottom: 6px;
     }
-    /* +2pt (was 13px) */
+    /* +2pt again (was 15px) */
     .howto ol{
       margin: 0;
       padding-left: 18px;
       color: var(--text);
-      font-size: 15px;
+      font-size: 17px;
       line-height: 1.45;
     }
     .howto li{
       margin: 6px 0;
     }
-    /* Keep code font size unchanged (it’s already small, and you didn't request it) */
+    /* Keep code font size unchanged */
     .howto code{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 12px;
@@ -292,7 +292,7 @@
             aria-describedby="accountHint"
           />
           <div class="hint" id="accountHint">
-            Numbers only (no decimals). Optional “$”.
+            Numbers only (no decimals). Optional “$”. Commas/spaces are okay (they’ll be removed).
           </div>
         </div>
 
@@ -485,12 +485,10 @@
     }
 
     async function copyToClipboard(text) {
-      // Best effort, works on HTTPS and most modern browsers
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
         return true;
       }
-      // Fallback
       const ta = document.createElement("textarea");
       ta.value = text;
       ta.style.position = "fixed";
@@ -517,12 +515,10 @@
 
     // Store last computed values so "Copy Result" copies the real answer
     let lastResultText = "";
-    let lastResultNumber = null;
 
     function clearResultToBlankState() {
       resultEl.textContent = "Your Position Size = —";
       lastResultText = "";
-      lastResultNumber = null;
       renderManualSteps([
         "Enter an Account USD amount, choose H or L, and select a Zone.",
         "When all fields are valid, the result will appear automatically."
@@ -534,11 +530,9 @@
       const hb = sanitizeHB(hbEl.value);
       const zone = sanitizeZone(zoneEl.value);
 
-      // If any field is invalid/missing, blank out the result (as requested)
       if (!acc.ok || !hb.ok || !zone.ok) {
         clearResultToBlankState();
 
-        // Status message: show the first relevant error, otherwise neutral prompt
         if (accountEl.value.trim().length === 0 && hbEl.value.trim().length === 0 && (zoneEl.value === "")) {
           setStatus("Enter values above to see your result.", "");
           return;
@@ -549,13 +543,11 @@
         return;
       }
 
-      // All valid -> compute and display
       const pos = computePositionSize(acc.valueInt, hb.value, zone.value);
       const outText = "Your Position Size = " + formatUSDInt(pos);
 
       resultEl.textContent = outText;
       lastResultText = outText;
-      lastResultNumber = pos;
 
       const accFmt = formatUSDInt(acc.valueInt);
       setStatus(`OK — Account: ${accFmt}, Mode: ${hb.value}, Zone: ${zone.value} → Position Size: ${formatUSDInt(pos)}`, "ok");
@@ -564,33 +556,23 @@
       renderManualSteps(steps);
     }
 
-    // Account: allow digits, optional leading $, and allow user to paste $ or commas/spaces (we'll strip)
     accountEl.addEventListener("input", () => {
       let v = accountEl.value;
-
-      // Keep only digits plus a single leading $ plus commas/spaces (we allow those, sanitize later)
       v = v.replace(/[^\d$,\s]/g, "");
-
-      // If there are multiple $ signs, keep only the first (and force it to the front if present)
       const hasDollar = v.includes("$");
       v = v.replace(/\$/g, "");
       if (hasDollar) v = "$" + v;
-
       accountEl.value = v;
-
       recomputeIfReady();
     });
 
-    // H/L field: force single character and letters only
     hbEl.addEventListener("input", () => {
       let v = hbEl.value.replace(/[^a-zA-Z]/g, "");
       v = v.slice(0, 1).toUpperCase();
       hbEl.value = v;
-
       recomputeIfReady();
     });
 
-    // Zone selection changes
     zoneEl.addEventListener("change", () => {
       recomputeIfReady();
     });
@@ -617,7 +599,6 @@
       accountEl.focus();
     });
 
-    // Initial state
     clearResultToBlankState();
   </script>
 </body>
