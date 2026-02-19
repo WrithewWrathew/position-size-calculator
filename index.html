@@ -1,3 +1,4 @@
+```html
 <!doctype html>
 <html lang="en">
 <head>
@@ -175,6 +176,22 @@
       border-color: rgba(134,239,172,.45);
     }
 
+    /* NEW: smaller inline copy button inside result box */
+    .copy-inline{
+      border-color: rgba(134,239,172,.30);
+      background: rgba(134,239,172,.10);
+      font-size: 11px;          /* 17px - 6px */
+      padding: 6px 10px;
+      border-radius: 12px;
+      min-width: auto;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .copy-inline:hover{
+      background: rgba(134,239,172,.14);
+      border-color: rgba(134,239,172,.45);
+    }
+
     .output{
       margin-top: 16px;
       padding: 14px;
@@ -200,6 +217,10 @@
       font-size: clamp(18px, 3.6vw, 26px);
       font-weight: 700;
       letter-spacing: .2px;
+      display:flex;             /* NEW: allow inline button on the right */
+      align-items:center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     /* +2pt (was 13px) */
@@ -298,14 +319,12 @@
 
         <div class="field">
           <label for="hb">H-Buy or L-Buy:</label>
-          <input
-            id="hb"
-            maxlength="1"
-            autocapitalize="characters"
-            autocomplete="off"
-            placeholder="H or L"
-            aria-describedby="hbHint"
-          />
+          <!-- CHANGED: input -> select with prompt "Select H or L" -->
+          <select id="hb" aria-describedby="hbHint">
+            <option value="" selected disabled>Select H or L</option>
+            <option value="H">H</option>
+            <option value="L">L</option>
+          </select>
           <div class="hint" id="hbHint">
             Must be a single letter: H or L (uppercase or lowercase).
           </div>
@@ -329,14 +348,18 @@
       </div>
 
       <div class="row">
-        <button id="copyBtn" type="button" class="copy">Copy Result</button>
         <button id="resetBtn" type="button" class="ghost">Reset</button>
       </div>
 
       <div class="output" aria-live="polite">
-        <div>
+        <div style="width:100%;">
           <div class="title">Result</div>
-          <div class="value" id="resultValue">Your Position Size = —</div>
+
+          <!-- CHANGED: value now includes an inline copy button on the right -->
+          <div class="value">
+            <span id="resultValue">Your Position Size = —</span>
+            <button id="copyBtn" type="button" class="copy-inline" style="display:none;">Copy Result</button>
+          </div>
         </div>
       </div>
 
@@ -514,6 +537,7 @@
     const hbEl = document.getElementById("hb");
     const zoneEl = document.getElementById("zone");
     const resultEl = document.getElementById("resultValue");
+    const copyBtn = document.getElementById("copyBtn");
 
     // Store last computed values so "Copy Result" copies the real answer
     let lastResultText = "";
@@ -523,6 +547,7 @@
       resultEl.textContent = "Your Position Size = —";
       lastResultText = "";
       lastResultNumber = null;
+      copyBtn.style.display = "none"; // show only when valid result exists
       renderManualSteps([
         "Enter an Account USD amount, choose H or L, and select a Zone.",
         "When all fields are valid, the result will appear automatically."
@@ -531,7 +556,7 @@
 
     function recomputeIfReady() {
       const acc = sanitizeAccount(accountEl.value);
-      const hb = sanitizeHB(hbEl.value);
+      const hb = sanitizeHB(hbEl.value);     // now reads from select's value
       const zone = sanitizeZone(zoneEl.value);
 
       // If any field is invalid/missing, blank out the result (as requested)
@@ -557,6 +582,8 @@
       lastResultText = outText;
       lastResultNumber = pos;
 
+      copyBtn.style.display = "inline-flex";
+
       const accFmt = formatUSDInt(acc.valueInt);
       setStatus(`OK — Account: ${accFmt}, Mode: ${hb.value}, Zone: ${zone.value} → Position Size: ${formatUSDInt(pos)}`, "ok");
 
@@ -581,12 +608,8 @@
       recomputeIfReady();
     });
 
-    // H/L field: force single character and letters only
-    hbEl.addEventListener("input", () => {
-      let v = hbEl.value.replace(/[^a-zA-Z]/g, "");
-      v = v.slice(0, 1).toUpperCase();
-      hbEl.value = v;
-
+    // CHANGED: H/L selection changes
+    hbEl.addEventListener("change", () => {
       recomputeIfReady();
     });
 
@@ -595,7 +618,7 @@
       recomputeIfReady();
     });
 
-    document.getElementById("copyBtn").addEventListener("click", async () => {
+    copyBtn.addEventListener("click", async () => {
       if (!lastResultText) {
         setStatus("Nothing to copy yet — fill in all fields first.", "bad");
         return;
@@ -622,3 +645,4 @@
   </script>
 </body>
 </html>
+```
