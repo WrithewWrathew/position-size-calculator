@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Position Size Calculator</title>
+  <style>
+    :root{
+      --bg:#0a0a0a;
+      --card:#111;
+      --text:#f2f2f2;
+      --muted:#b9b9b9;
+      --accent:#7dd3fc;
+      --danger:#fb7185;
+      --ok:#86efac;
+      --border:#242424;
+      --shadow: 0 10px 30px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(900px 500px at 20% 0%, rgba(125,211,252,.10), transparent 60%),
+                  radial-gradient(900px 500px at 80% 20%, rgba(134,239,172,.08), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 22px;
+    }
+
+    .wrap{
+      width: min(680px, 100%);
+    }
+
+    .header{
+      margin-bottom: 14px;
+    }
+
+    h1{
+      font-size: clamp(20px, 3.5vw, 30px);
+      margin: 0 0 6px;
+      letter-spacing: .2px;
+    }
+    .sub{
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 55%), var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    @media (min-width: 720px){
+      .grid{ grid-template-columns: 1.35fr .85fr; }
+      .grid .full{ grid-column: 1 / -1; }
+    }
+
+    label{
+      display:block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .field{
+      position: relative;
+    }
+
+    input, select{
+      width: 100%;
+      background: rgba(255,255,255,.03);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 14px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    input:focus, select:focus{
+      border-color: rgba(125,211,252,.55);
+      box-shadow: 0 0 0 4px rgba(125,211,252,.12);
+    }
+
+    /* --- Dropdown options styling (best-effort across browsers) --- */
+    select {
+      background-color: rgba(255,255,255,.03);
+      color: var(--text);
+      accent-color: var(--accent);
+    }
+    select option{
+      background: #000;      /* requested: black dropdown background */
+      color: #fff;           /* requested: white numbers */
+    }
+    select option:checked,
+    select option:hover{
+      /* highlight with contrast */
+      background: #1a1a1a;
+      color: #fff;
+    }
+    /* Windows high-contrast/forced-colors support */
+    @media (forced-colors: active) {
+      select, option { forced-color-adjust: auto; }
+    }
+
+    .hint{
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .row{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+      margin-top: 14px;
+    }
+
+    button{
+      appearance:none;
+      border: 1px solid rgba(125,211,252,.35);
+      background: rgba(125,211,252,.12);
+      color: var(--text);
+      padding: 12px 14px;
+      font-size: 15px;
+      border-radius: 14px;
+      cursor:pointer;
+      transition: transform .06s ease, background .15s ease, border-color .15s ease;
+      min-width: 140px;
+    }
+    button:hover{
+      background: rgba(125,211,252,.18);
+      border-color: rgba(125,211,252,.55);
+    }
+    button:active{ transform: translateY(1px); }
+
+    .ghost{
+      border-color: rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      min-width: 120px;
+    }
+
+    .copy{
+      border-color: rgba(134,239,172,.30);
+      background: rgba(134,239,172,.10);
+      min-width: 140px;
+    }
+    .copy:hover{
+      background: rgba(134,239,172,.14);
+      border-color: rgba(134,239,172,.45);
+    }
+
+    .output{
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .output .title{
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .output .value{
+      font-size: clamp(18px, 3.6vw, 26px);
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+
+    .status{
+      margin-top: 10px;
+      font-size: 13px;
+      line-height: 1.35;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+      color: var(--muted);
+    }
+    .status.ok{
+      border-color: rgba(134,239,172,.25);
+      background: rgba(134,239,172,.06);
+      color: var(--ok);
+    }
+    .status.bad{
+      border-color: rgba(251,113,133,.25);
+      background: rgba(251,113,133,.06);
+      color: var(--danger);
+    }
+
+    .mini{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 12px;
+      line-height: 1.4;
+    }
+
+    .howto{
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+    }
+    .howto .title{
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .howto ol{
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .howto li{
+      margin: 6px 0;
+    }
+    .howto code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      background: rgba(255,255,255,.06);
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.10);
+      color: var(--text);
+    }
+
+    /* Hide number spinners (mobile/desktop consistency) */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number]{ -moz-appearance: textfield; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>Position Size Calculator</h1>
+      <p class="sub">Enter your account size (USD), choose H or L, select a zone (0–5), and get your position size.</p>
+    </div>
+
+    <div class="card" role="application" aria-label="Position Size Calculator">
+      <div class="grid">
+        <div class="field">
+          <label for="account">Account USD:</label>
+          <input
+            id="account"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="$10000"
+            aria-describedby="accountHint"
+          />
+          <div class="hint" id="accountHint">
+            Numbers only (no decimals). Optional “$”. Commas/spaces are okay (they’ll be removed).
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="hb">H-Buy or L-Buy:</label>
+          <input
+            id="hb"
+            maxlength="1"
+            autocapitalize="characters"
+            autocomplete="off"
+            placeholder="H or L"
+            aria-describedby="hbHint"
+          />
+          <div class="hint" id="hbHint">
+            Must be a single letter: H or L (uppercase or lowercase).
+          </div>
+        </div>
+
+        <div class="field full">
+          <label for="zone">Zone Number:</label>
+          <select id="zone" aria-describedby="zoneHint">
+            <option value="" selected disabled>Select zone (0–5)</option>
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+          <div class="hint" id="zoneHint">
+            Valid zones: 0, 1, 2, 3, 4, 5.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <button id="calcBtn" type="button">Calculate</button>
+        <button id="copyBtn" type="button" class="copy">Copy Result</button>
+        <button id="resetBtn" type="button" class="ghost">Reset</button>
+      </div>
+
+      <div class="output" aria-live="polite">
+        <div>
+          <div class="title">Result</div>
+          <div class="value" id="resultValue">Your Position Size = —</div>
+        </div>
+      </div>
+
+      <div id="status" class="status" aria-live="polite">
+        Enter values above and press Calculate.
+      </div>
+
+      <div class="mini">
+        Rules: For <b>L</b>, zone 0 subtracts $100; zones 1–5 use 85%, 60%, 40%, 20%, 10%. For <b>H</b>, first divide by 2, then apply those same zone multipliers (zone 0 is just half).
+      </div>
+
+      <div class="howto" id="howtoBox" aria-live="polite">
+        <div class="title">Manual steps (based on your current inputs)</div>
+        <ol id="howtoSteps">
+          <li>Enter an <code>Account USD</code> amount, choose <code>H</code> or <code>L</code>, and select a <code>Zone</code>.</li>
+          <li>Press <code>Calculate</code> to see steps for that exact selection.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Helpers ---
+    function formatUSDInt(n) {
+      // n is assumed to be a non-negative integer
+      return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+    }
+
+    function setStatus(message, type) {
+      const el = document.getElementById("status");
+      el.textContent = message;
+      el.className = "status" + (type ? " " + type : "");
+    }
+
+    function sanitizeAccount(raw) {
+      // Allow optional $ plus commas/spaces; forbid decimals.
+      // Returns { ok, valueInt, error }
+      if (raw == null) raw = "";
+      const trimmed = String(raw).trim();
+      if (trimmed.length === 0) return { ok:false, error:"Account USD is required." };
+
+      // remove spaces and commas
+      const noSpaceComma = trimmed.replace(/[\s,]/g, "");
+
+      // allow leading $
+      const withoutDollar = noSpaceComma.startsWith("$")
+        ? noSpaceComma.slice(1)
+        : noSpaceComma;
+
+      // Must be digits only, at least 1 digit
+      if (!/^\d+$/.test(withoutDollar)) {
+        return { ok:false, error:"Account USD must be whole numbers only (no decimals/letters). Optional leading $ is allowed." };
+      }
+
+      // Convert safely
+      const value = Number(withoutDollar);
+      if (!Number.isSafeInteger(value) || value < 0) {
+        return { ok:false, error:"Account USD must be a valid positive whole number." };
+      }
+
+      return { ok:true, valueInt: value };
+    }
+
+    function sanitizeHB(raw) {
+      if (raw == null) raw = "";
+      const trimmed = String(raw).trim();
+      if (trimmed.length !== 1) return { ok:false, error:"H-Buy or L-Buy must be a single letter: H or L." };
+      const up = trimmed.toUpperCase();
+      if (up !== "H" && up !== "L") return { ok:false, error:"Only H or L is allowed in H-Buy or L-Buy." };
+      return { ok:true, value: up };
+    }
+
+    function sanitizeZone(raw) {
+      if (raw == null || raw === "") return { ok:false, error:"Zone Number is required (0–5)." };
+      const s = String(raw).trim();
+      if (!/^[0-5]$/.test(s)) return { ok:false, error:"Zone Number must be 0, 1, 2, 3, 4, or 5." };
+      return { ok:true, value: Number(s) };
+    }
+
+    function computePositionSize(accountInt, hb, zone) {
+      // Returns integer dollars
+      const multipliers = {
+        1: 0.85,
+        2: 0.60,
+        3: 0.40,
+        4: 0.20,
+        5: 0.10
+      };
+
+      if (hb === "L") {
+        if (zone === 0) return Math.max(0, accountInt - 100);
+        return Math.floor(accountInt * multipliers[zone]); // whole dollars
+      }
+
+      // hb === "H"
+      const half = Math.floor(accountInt / 2);
+      if (zone === 0) return half;
+      return Math.floor(half * multipliers[zone]);
+    }
+
+    function buildManualSteps(accountInt, hb, zone, pos) {
+      const steps = [];
+      const accFmt = formatUSDInt(accountInt);
+
+      steps.push(`Your inputs: Account = ${accFmt}, Mode = ${hb}, Zone = ${zone}.`);
+
+      if (hb === "L") {
+        if (zone === 0) {
+          steps.push(`Because Mode is L and Zone is 0: subtract $100 from the account.`);
+          steps.push(`${accFmt} - $100 = ${formatUSDInt(Math.max(0, accountInt - 100))}`);
+        } else {
+          const pctMap = {1:85,2:60,3:40,4:20,5:10};
+          const pct = pctMap[zone];
+          steps.push(`Because Mode is L and Zone is ${zone}: take ${pct}% of the account.`);
+          steps.push(`${pct}% of ${accFmt} = ${accFmt} × ${pct/100} = ${formatUSDInt(pos)}`);
+        }
+      } else { // H
+        const half = Math.floor(accountInt / 2);
+        steps.push(`Because Mode is H: first divide the account by 2.`);
+        steps.push(`${accFmt} ÷ 2 = ${formatUSDInt(half)}`);
+
+        if (zone === 0) {
+          steps.push(`Zone 0 for H uses just the half value (no multiplier).`);
+        } else {
+          const multMap = {1:0.85,2:0.60,3:0.40,4:0.20,5:0.10};
+          const pctMap = {1:85,2:60,3:40,4:20,5:10};
+          const mult = multMap[zone];
+          const pct = pctMap[zone];
+          steps.push(`Then apply the Zone ${zone} multiplier (${pct}%):`);
+          steps.push(`${formatUSDInt(half)} × ${mult} = ${formatUSDInt(pos)}`);
+        }
+      }
+
+      steps.push(`Final: Your Position Size = ${formatUSDInt(pos)}`);
+      return steps;
+    }
+
+    function renderManualSteps(steps) {
+      const ol = document.getElementById("howtoSteps");
+      ol.innerHTML = "";
+      steps.forEach(s => {
+        const li = document.createElement("li");
+        li.textContent = s;
+        ol.appendChild(li);
+      });
+    }
+
+    async function copyToClipboard(text) {
+      // Best effort, works on HTTPS and most modern browsers
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+      // Fallback
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) {
+        document.body.removeChild(ta);
+        return false;
+      }
+    }
+
+    // --- Input behavior (restrict typing) ---
+    const accountEl = document.getElementById("account");
+    const hbEl = document.getElementById("hb");
+    const zoneEl = document.getElementById("zone");
+    const resultEl = document.getElementById("resultValue");
+
+    // Store last calculated values so "Copy Result" copies the real answer
+    let lastResultText = "";
+    let lastResultNumber = null;
+
+    // Account: allow digits, optional leading $, and allow user to paste $ or commas/spaces (we'll strip)
+    accountEl.addEventListener("input", () => {
+      let v = accountEl.value;
+
+      // Keep only digits plus a single leading $ plus commas/spaces (we allow those, sanitize later)
+      v = v.replace(/[^\d$,\s]/g, "");
+
+      // If there are multiple $ signs, keep only the first (and force it to the front if present)
+      const hasDollar = v.includes("$");
+      v = v.replace(/\$/g, ""); // remove all dollars
+      if (hasDollar) v = "$" + v;
+
+      accountEl.value = v;
+    });
+
+    // H/L field: force single character and letters only
+    hbEl.addEventListener("input", () => {
+      let v = hbEl.value.replace(/[^a-zA-Z]/g, "");
+      v = v.slice(0, 1).toUpperCase();
+      hbEl.value = v;
+    });
+
+    // Optional: calculate on Enter
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("calcBtn").click();
+      }
+    });
+
+    // --- Actions ---
+    document.getElementById("calcBtn").addEventListener("click", () => {
+      const acc = sanitizeAccount(accountEl.value);
+      if (!acc.ok) {
+        setStatus(acc.error, "bad");
+        resultEl.textContent = "Your Position Size = —";
+        lastResultText = "";
+        lastResultNumber = null;
+        renderManualSteps([
+          "Enter an Account USD amount, choose H or L, and select a Zone.",
+          "Press Calculate to see the step-by-step manual method for your exact selection."
+        ]);
+        return;
+      }
+
+      const hb = sanitizeHB(hbEl.value);
+      if (!hb.ok) {
+        setStatus(hb.error, "bad");
+        resultEl.textContent = "Your Position Size = —";
+        lastResultText = "";
+        lastResultNumber = null;
+        renderManualSteps([
+          "Enter an Account USD amount, choose H or L, and select a Zone.",
+          "Press Calculate to see the step-by-step manual method for your exact selection."
+        ]);
+        return;
+      }
+
+      const zone = sanitizeZone(zoneEl.value);
+      if (!zone.ok) {
+        setStatus(zone.error, "bad");
+        resultEl.textContent = "Your Position Size = —";
+        lastResultText = "";
+        lastResultNumber = null;
+        renderManualSteps([
+          "Enter an Account USD amount, choose H or L, and select a Zone.",
+          "Press Calculate to see the step-by-step manual method for your exact selection."
+        ]);
+        return;
+      }
+
+      const pos = computePositionSize(acc.valueInt, hb.value, zone.value);
+      const outText = "Your Position Size = " + formatUSDInt(pos);
+
+      resultEl.textContent = outText;
+
+      // Save for copy button
+      lastResultText = outText;
+      lastResultNumber = pos;
+
+      // Friendly status summary
+      const accFmt = formatUSDInt(acc.valueInt);
+      setStatus(`OK — Account: ${accFmt}, Mode: ${hb.value}, Zone: ${zone.value} → Position Size: ${formatUSDInt(pos)}`, "ok");
+
+      // Manual steps for their exact inputs
+      const steps = buildManualSteps(acc.valueInt, hb.value, zone.value, pos);
+      renderManualSteps(steps);
+    });
+
+    document.getElementById("copyBtn").addEventListener("click", async () => {
+      if (!lastResultText) {
+        setStatus("Nothing to copy yet — press Calculate first.", "bad");
+        return;
+      }
+      const ok = await copyToClipboard(lastResultText);
+      if (ok) {
+        setStatus("Copied to clipboard: " + lastResultText, "ok");
+      } else {
+        setStatus("Copy failed on this browser. You can manually select and copy the result text.", "bad");
+      }
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      accountEl.value = "";
+      hbEl.value = "";
+      zoneEl.value = "";
+      resultEl.textContent = "Your Position Size = —";
+      lastResultText = "";
+      lastResultNumber = null;
+      setStatus("Enter values above and press Calculate.", "");
+      renderManualSteps([
+        "Enter an Account USD amount, choose H or L, and select a Zone.",
+        "Press Calculate to see the step-by-step manual method for your exact selection."
+      ]);
+      accountEl.focus();
+    });
+
+    // Initial manual steps message
+    renderManualSteps([
+      "Enter an Account USD amount, choose H or L, and select a Zone.",
+      "Press Calculate to see the step-by-step manual method for your exact selection."
+    ]);
+  </script>
+</body>
+</html>
