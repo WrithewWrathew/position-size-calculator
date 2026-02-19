@@ -41,15 +41,18 @@
       margin-bottom: 14px;
     }
 
+    /* Keep title font unchanged (as requested) */
     h1{
       font-size: clamp(20px, 3.5vw, 30px);
       margin: 0 0 6px;
       letter-spacing: .2px;
     }
+
+    /* +2pt (was 14px) */
     .sub{
       margin: 0;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 16px;
       line-height: 1.4;
     }
 
@@ -73,9 +76,10 @@
       .grid .full{ grid-column: 1 / -1; }
     }
 
+    /* +2pt (was 13px) */
     label{
       display:block;
-      font-size: 13px;
+      font-size: 15px;
       color: var(--muted);
       margin-bottom: 8px;
     }
@@ -84,6 +88,7 @@
       position: relative;
     }
 
+    /* Keep user input font unchanged (as requested) */
     input, select{
       width: 100%;
       background: rgba(255,255,255,.03);
@@ -107,22 +112,23 @@
       accent-color: var(--accent);
     }
     select option{
-      background: #000;      /* black dropdown background */
-      color: #fff;           /* white numbers */
+      background: #000;
+      color: #fff;
     }
     select option:checked,
     select option:hover{
-      background: #1a1a1a;   /* highlight with contrast */
+      background: #1a1a1a;
       color: #fff;
     }
     @media (forced-colors: active) {
       select, option { forced-color-adjust: auto; }
     }
 
+    /* +2pt (was 12px) */
     .hint{
       margin-top: 7px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 14px;
       line-height: 1.35;
     }
 
@@ -134,13 +140,14 @@
       margin-top: 14px;
     }
 
+    /* +2pt (was 15px) */
     button{
       appearance:none;
       border: 1px solid rgba(125,211,252,.35);
       background: rgba(125,211,252,.12);
       color: var(--text);
       padding: 12px 14px;
-      font-size: 15px;
+      font-size: 17px;
       border-radius: 14px;
       cursor:pointer;
       transition: transform .06s ease, background .15s ease, border-color .15s ease;
@@ -180,20 +187,25 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+
+    /* +2pt (was 13px) */
     .output .title{
       color: var(--muted);
-      font-size: 13px;
+      font-size: 15px;
       margin-bottom: 4px;
     }
+
+    /* Keep "Your Position Size =" font unchanged (as requested) */
     .output .value{
       font-size: clamp(18px, 3.6vw, 26px);
       font-weight: 700;
       letter-spacing: .2px;
     }
 
+    /* +2pt (was 13px) */
     .status{
       margin-top: 10px;
-      font-size: 13px;
+      font-size: 15px;
       line-height: 1.35;
       padding: 10px 12px;
       border-radius: 12px;
@@ -212,8 +224,9 @@
       color: var(--danger);
     }
 
+    /* +2pt (was 12px) */
     .mini{
-      font-size: 12px;
+      font-size: 14px;
       color: var(--muted);
       margin-top: 12px;
       line-height: 1.4;
@@ -226,21 +239,24 @@
       border: 1px solid var(--border);
       background: rgba(255,255,255,.02);
     }
+    /* +2pt (was 13px) */
     .howto .title{
-      font-size: 13px;
+      font-size: 15px;
       color: var(--muted);
       margin-bottom: 6px;
     }
+    /* +2pt (was 13px) */
     .howto ol{
       margin: 0;
       padding-left: 18px;
       color: var(--text);
-      font-size: 13px;
+      font-size: 15px;
       line-height: 1.45;
     }
     .howto li{
       margin: 6px 0;
     }
+    /* Keep code font size unchanged (it’s already small, and you didn't request it) */
     .howto code{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 12px;
@@ -276,7 +292,7 @@
             aria-describedby="accountHint"
           />
           <div class="hint" id="accountHint">
-            Numbers only (no decimals). Optional “$”. Commas/spaces are okay (they’ll be removed).
+            Numbers only (no decimals). Optional “$”.
           </div>
         </div>
 
