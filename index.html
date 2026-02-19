@@ -216,7 +216,7 @@
       font-size: clamp(18px, 3.6vw, 26px);
       font-weight: 700;
       letter-spacing: .2px;
-      display:flex;             /* NEW: allow inline button on the right */
+      display:flex;             /* allow inline button on the right */
       align-items:center;
       gap: 10px;
       flex-wrap: wrap;
@@ -276,7 +276,7 @@
     .howto li{
       margin: 6px 0;
     }
-    /* Keep code font size unchanged (it’s already small, and you didn't request it) */
+    /* Keep code font size unchanged */
     .howto code{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       font-size: 12px;
@@ -318,7 +318,6 @@
 
         <div class="field">
           <label for="hb">H-Buy or L-Buy:</label>
-          <!-- CHANGED: input -> select with prompt "Select H or L" -->
           <select id="hb" aria-describedby="hbHint">
             <option value="" selected disabled>Select H or L</option>
             <option value="H">H</option>
@@ -353,8 +352,6 @@
       <div class="output" aria-live="polite">
         <div style="width:100%;">
           <div class="title">Result</div>
-
-          <!-- CHANGED: value now includes an inline copy button on the right -->
           <div class="value">
             <span id="resultValue">Your Position Size = —</span>
             <button id="copyBtn" type="button" class="copy-inline" style="display:none;">Copy Result</button>
@@ -540,7 +537,7 @@
 
     // Store last computed values so "Copy Result" copies the real answer
     let lastResultText = "";
-    let lastResultNumber = null;
+    let lastResultNumber = null; // <-- we will copy this as raw digits
 
     function clearResultToBlankState() {
       resultEl.textContent = "Your Position Size = —";
@@ -555,7 +552,7 @@
 
     function recomputeIfReady() {
       const acc = sanitizeAccount(accountEl.value);
-      const hb = sanitizeHB(hbEl.value);     // now reads from select's value
+      const hb = sanitizeHB(hbEl.value);
       const zone = sanitizeZone(zoneEl.value);
 
       // If any field is invalid/missing, blank out the result (as requested)
@@ -579,12 +576,12 @@
 
       resultEl.textContent = outText;
       lastResultText = outText;
-      lastResultNumber = pos;
+      lastResultNumber = pos; // <-- store raw integer
 
       copyBtn.style.display = "inline-flex";
 
       const accFmt = formatUSDInt(acc.valueInt);
-      setStatus(`OK — Account: ${accFmt}, Buy: ${hb.value}, Zone: ${zone.value} → Position Size: ${formatUSDInt(pos)}`, "ok");
+      setStatus(`OK — Account: ${accFmt}, Mode: ${hb.value}, Zone: ${zone.value} → Position Size: ${formatUSDInt(pos)}`, "ok");
 
       const steps = buildManualSteps(acc.valueInt, hb.value, zone.value, pos);
       renderManualSteps(steps);
@@ -607,7 +604,7 @@
       recomputeIfReady();
     });
 
-    // CHANGED: H/L selection changes
+    // H/L selection changes
     hbEl.addEventListener("change", () => {
       recomputeIfReady();
     });
@@ -618,13 +615,17 @@
     });
 
     copyBtn.addEventListener("click", async () => {
-      if (!lastResultText) {
+      if (lastResultNumber === null) {
         setStatus("Nothing to copy yet — fill in all fields first.", "bad");
         return;
       }
-      const ok = await copyToClipboard(lastResultText);
+
+      // ONLY CHANGE: copy raw digits (no $ sign, no commas)
+      const rawDigits = String(lastResultNumber);
+
+      const ok = await copyToClipboard(rawDigits);
       if (ok) {
-        setStatus("Copied to clipboard: " + lastResultText, "ok");
+        setStatus("Copied to clipboard: " + rawDigits, "ok");
       } else {
         setStatus("Copy failed on this browser. You can manually select and copy the result text.", "bad");
       }
